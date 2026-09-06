@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: fizzy14-control-panel
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: CHECKPOINT_DISTANCE
+        value: 1000
+      - key: MC_VERSION
+        value: 1.20.4
+    # NOTE: Render's free/starter web services have no GPU and no display.
+    # This deploys the mineflayer bot + web GUI only (Part 1). OBS + the
+    # real shader-rendered game client (Part 2) cannot run here — they run
+    # on your own PC or a GPU cloud VPS. The "Go Live" button on this panel
+    # just needs network access to that machine's OBS WebSocket port.

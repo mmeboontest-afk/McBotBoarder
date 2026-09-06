@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fizzy14 Control Panel</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>🧊 Fizzy14 Control Panel</h1>
+    <span id="conn-badge" class="badge offline">Offline</span>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>1. เชื่อมต่อเซิร์ฟเวอร์ (Java Edition)</h2>
+      <div class="grid">
+        <label>Server IP <input id="host" placeholder="play.example.net" /></label>
+        <label>Port <input id="port" value="25565" /></label>
+        <label>เวอร์ชัน <input id="version" placeholder="เช่น 1.20.4 (เว้นว่าง = auto)" /></label>
+        <label>ชื่อบอท <input id="username" value="Fizzy14" /></label>
+        <label>Auth <select id="auth"><option value="offline">Offline / Cracked</option><option value="microsoft">Microsoft (skin จริงได้)</option></select></label>
+        <label>ลิงก์สกิน (อ้างอิงเท่านั้น) <input id="skin" placeholder="https://..." /></label>
+        <label>World Border Z (เว้นว่างถ้าใช้ค่าจากเซิร์ฟเวอร์) <input id="borderZ" placeholder="เช่น -29999984" /></label>
+        <label>เช็คพอยต์ทุกกี่บล็อก <input id="checkpointDistance" value="1000" /></label>
+      </div>
+      <div class="actions">
+        <button id="btn-connect" class="primary">Connect</button>
+        <button id="btn-disconnect" class="danger">Disconnect</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2. สถานะบอท</h2>
+      <div class="grid stats">
+        <div>สถานะ: <b id="stat-state">-</b></div>
+        <div>ตำแหน่ง: <b id="stat-pos">-</b></div>
+        <div>HP: <b id="stat-hp">-</b></div>
+        <div>อาหาร: <b id="stat-food">-</b></div>
+        <div>ไอเทมในกระเป๋า: <b id="stat-inv">-</b></div>
+      </div>
+      <p class="note">⚠️ นี่คือค่าที่อ่านจากโปรโตคอลเกม ไม่ใช่ภาพเกมจริง — บอทตัวนี้ (mineflayer) ไม่มีการเรนเดอร์กราฟิก/shader ในตัวเอง ดูส่วนที่ 3 สำหรับการไลฟ์ภาพจริง</p>
+    </section>
+
+    <section class="card">
+      <h2>3. 🔴 ไลฟ์สด (YouTube API v3)</h2>
+      <p class="note">สั่ง OBS ที่รันอยู่บนเครื่องซึ่งเปิดเกม Minecraft จริง + shader BSL + overlay ของคุณ (ดู <code>baritone/README_part2.md</code>) ต้องตั้งค่า OBS WebSocket ให้เข้าถึงได้ก่อน</p>
+      <div class="grid">
+        <label>OBS Host <input id="obsHost" value="127.0.0.1" /></label>
+        <label>OBS Port <input id="obsPort" value="4455" /></label>
+        <label>OBS Password <input id="obsPassword" type="password" /></label>
+        <label>ชื่อไลฟ์ <input id="ytTitle" placeholder="Fizzy14 เดินทางไป World Border" /></label>
+        <label>คำอธิบาย <input id="ytDesc" placeholder="ไลฟ์บอท Fizzy14..." /></label>
+        <label>Privacy <select id="ytPrivacy"><option value="public">Public</option><option value="unlisted">Unlisted</option><option value="private">Private</option></select></label>
+      </div>
+      <div class="actions">
+        <button id="btn-yt-golive" class="live">🔴 กด Live</button>
+        <button id="btn-yt-stop" class="danger">หยุด Live</button>
+      </div>
+      <p class="note">ต้องตั้งค่า <code>YOUTUBE_CLIENT_ID</code>, <code>YOUTUBE_CLIENT_SECRET</code>, <code>YOUTUBE_REFRESH_TOKEN</code> ใน <code>.env</code> ก่อน (ดูวิธีใน <code>.env.example</code> และรัน <code>node youtube/getRefreshToken.js</code> ครั้งเดียว)</p>
+    </section>
+
+    <section class="card">
+      <h2>4. Log</h2>
+      <div id="log" class="log"></div>
+    </section>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
