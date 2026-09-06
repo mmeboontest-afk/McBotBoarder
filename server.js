@@ -3,18 +3,21 @@ const path = require('path')
 const express = require('express')
 const http = require('http')
 const { Server } = require('socket.io')
-const { createBot } = require('./bot/createBot')
-const { BotController } = require('./bot/behavior')
-const { stopLiveOnOBS, setStreamKeyAndGoLive } = require('./obs/obsControl')
-const { createBroadcastAndStream, transitionBroadcast } = require('./youtube/ytApi')
 const { google } = require('googleapis')
+const { createBot } = require('./createBot')
+const { BotController } = require('./behavior')
+const { stopLiveOnOBS, setStreamKeyAndGoLive } = require('./obsControl')
+const { createBroadcastAndStream, transitionBroadcast } = require('./ytApi')
 
 const app = express()
 const server = http.createServer(app)
 const io = new Server(server)
 
 app.use(express.json())
-app.use(express.static(path.join(__dirname, 'public')))
+
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')))
+app.get('/app.js', (req, res) => res.sendFile(path.join(__dirname, 'app.js')))
+app.get('/style.css', (req, res) => res.sendFile(path.join(__dirname, 'style.css')))
 
 let bot = null
 let controller = null
@@ -99,18 +102,11 @@ app.get('/api/status', (req, res) => {
 })
 
 app.post('/api/skin', (req, res) => {
-  // See bot/createBot.js note: actually changing the rendered skin needs a
-  // premium Microsoft account or a server-side skin plugin. This endpoint
-  // just stores the reference shown in the GUI.
   currentSkin = req.body.skin || null
   emitLog('ตั้งค่าลิงก์สกินไว้แล้ว (ต้องใช้บัญชี Microsoft หรือปลั๊กอินสกินฝั่งเซิร์ฟเวอร์เพื่อให้ขึ้นจริง)')
   res.json({ ok: true, skin: currentSkin })
 })
 
-// "Go Live" (YouTube API v3 flow) — see below.
-
-// One-click: create a YouTube live broadcast via API v3, hand the RTMP
-// details straight to OBS, start streaming, and go live on YouTube.
 app.post('/api/youtube/golive', async (req, res) => {
   try {
     const { title, description, privacyStatus, obsHost, obsPort, obsPassword } = req.body
@@ -128,8 +124,6 @@ app.post('/api/youtube/golive', async (req, res) => {
       { rtmpUrl, streamKey }
     )
 
-    // Give OBS a few seconds to actually connect to YouTube's ingest server
-    // before telling YouTube to transition the broadcast to "live".
     emitLog('รอให้ OBS เชื่อมต่อสัญญาณเข้า YouTube (~10 วิ) ก่อน transition เป็น live...')
     await new Promise((r) => setTimeout(r, 10000))
     await transitionBroadcast(broadcastId, 'live')
@@ -158,9 +152,6 @@ app.post('/api/youtube/stop', async (req, res) => {
   }
 })
 
-// ---- One-time YouTube OAuth setup, done entirely in the browser (no terminal needed) ----
-// Visit /auth/youtube once on your deployed Render URL after setting
-// YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REDIRECT_URI env vars.
 function buildOAuthClient() {
   const { YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REDIRECT_URI } = process.env
   if (!YOUTUBE_CLIENT_ID || !YOUTUBE_CLIENT_SECRET || !YOUTUBE_REDIRECT_URI) {
@@ -195,10 +186,8 @@ app.get('/oauth2callback', async (req, res) => {
         เพิกถอนสิทธิ์แอปนี้ก่อน แล้วกลับไปเปิด <a href="/auth/youtube">/auth/youtube</a> ใหม่อีกครั้ง</p>
       `)
     }
-    // Use it immediately for this running instance...
     process.env.YOUTUBE_REFRESH_TOKEN = tokens.refresh_token
     emitLog('ได้ YouTube Refresh Token แล้ว ใช้งานได้ทันทีในรอบนี้')
-    // ...and show it so it can be saved permanently in Render's Environment Variables.
     res.send(`
       <html><body style="font-family:sans-serif;max-width:640px;margin:40px auto;line-height:1.6">
         <h2>✅ สำเร็จ!</h2>
