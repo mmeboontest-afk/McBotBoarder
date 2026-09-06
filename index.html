@@ -44,29 +44,19 @@
     </section>
 
     <section class="card">
-      <h2>3. 🔴 ไลฟ์สด</h2>
-      <p class="note">ทั้งสองแบบสั่ง OBS ที่รันอยู่บนเครื่องซึ่งเปิดเกม Minecraft จริง + shader BSL + overlay ของคุณ (ดู <code>baritone/README_part2.md</code>) ต้องตั้งค่า OBS WebSocket ให้เข้าถึงได้ก่อน</p>
+      <h2>3. 🔴 ไลฟ์สด (YouTube API v3)</h2>
+      <p class="note">สั่ง OBS ที่รันอยู่บนเครื่องซึ่งเปิดเกม Minecraft จริง + shader BSL + overlay ของคุณ (ดู <code>baritone/README_part2.md</code>) ต้องตั้งค่า OBS WebSocket ให้เข้าถึงได้ก่อน</p>
       <div class="grid">
         <label>OBS Host <input id="obsHost" value="127.0.0.1" /></label>
         <label>OBS Port <input id="obsPort" value="4455" /></label>
         <label>OBS Password <input id="obsPassword" type="password" /></label>
-      </div>
-
-      <h3>3a. แบบง่าย — ใช้ stream key ที่ตั้งไว้ใน OBS อยู่แล้ว</h3>
-      <div class="actions">
-        <button id="btn-golive" class="live">🔴 กด Live</button>
-        <button id="btn-stoplive" class="danger">หยุด Live</button>
-      </div>
-
-      <h3>3b. แบบ YouTube API v3 — สร้าง broadcast ใหม่ + ตั้ง key ให้ OBS อัตโนมัติ</h3>
-      <div class="grid">
         <label>ชื่อไลฟ์ <input id="ytTitle" placeholder="Fizzy14 เดินทางไป World Border" /></label>
         <label>คำอธิบาย <input id="ytDesc" placeholder="ไลฟ์บอท Fizzy14..." /></label>
         <label>Privacy <select id="ytPrivacy"><option value="public">Public</option><option value="unlisted">Unlisted</option><option value="private">Private</option></select></label>
       </div>
       <div class="actions">
-        <button id="btn-yt-golive" class="live">🔴 สร้าง + Go Live ผ่าน YouTube API</button>
-        <button id="btn-yt-stop" class="danger">จบ YouTube Live</button>
+        <button id="btn-yt-golive" class="live">🔴 กด Live</button>
+        <button id="btn-yt-stop" class="danger">หยุด Live</button>
       </div>
       <p class="note">ต้องตั้งค่า <code>YOUTUBE_CLIENT_ID</code>, <code>YOUTUBE_CLIENT_SECRET</code>, <code>YOUTUBE_REFRESH_TOKEN</code> ใน <code>.env</code> ก่อน (ดูวิธีใน <code>.env.example</code> และรัน <code>node youtube/getRefreshToken.js</code> ครั้งเดียว)</p>
     </section>

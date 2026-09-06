@@ -5,8 +5,9 @@ const http = require('http')
 const { Server } = require('socket.io')
 const { createBot } = require('./bot/createBot')
 const { BotController } = require('./bot/behavior')
-const { goLiveOnOBS, stopLiveOnOBS, setStreamKeyAndGoLive } = require('./obs/obsControl')
+const { stopLiveOnOBS, setStreamKeyAndGoLive } = require('./obs/obsControl')
 const { createBroadcastAndStream, transitionBroadcast } = require('./youtube/ytApi')
+const { google } = require('googleapis')
 
 const app = express()
 const server = http.createServer(app)
@@ -106,38 +107,7 @@ app.post('/api/skin', (req, res) => {
   res.json({ ok: true, skin: currentSkin })
 })
 
-// "Go Live" — this only works if OBS (running the REAL game client + BSL
-// shader + your overlay as a Browser Source) is reachable at the given
-// obs-websocket address. See baritone/README_part2.md for that setup.
-app.post('/api/golive', async (req, res) => {
-  try {
-    const { obsHost, obsPort, obsPassword } = req.body
-    await goLiveOnOBS({
-      host: obsHost || process.env.OBS_HOST,
-      port: obsPort || process.env.OBS_PORT,
-      password: obsPassword || process.env.OBS_PASSWORD
-    })
-    emitLog('สั่ง OBS เริ่ม Live แล้ว')
-    res.json({ ok: true })
-  } catch (err) {
-    res.status(500).json({ error: 'สั่ง OBS ไม่สำเร็จ: ' + err.message })
-  }
-})
-
-app.post('/api/stoplive', async (req, res) => {
-  try {
-    const { obsHost, obsPort, obsPassword } = req.body
-    await stopLiveOnOBS({
-      host: obsHost || process.env.OBS_HOST,
-      port: obsPort || process.env.OBS_PORT,
-      password: obsPassword || process.env.OBS_PASSWORD
-    })
-    emitLog('สั่ง OBS หยุด Live แล้ว')
-    res.json({ ok: true })
-  } catch (err) {
-    res.status(500).json({ error: 'สั่งหยุด OBS ไม่สำเร็จ: ' + err.message })
-  }
-})
+// "Go Live" (YouTube API v3 flow) — see below.
 
 // One-click: create a YouTube live broadcast via API v3, hand the RTMP
 // details straight to OBS, start streaming, and go live on YouTube.
@@ -185,6 +155,62 @@ app.post('/api/youtube/stop', async (req, res) => {
   } catch (err) {
     emitLog('หยุดไลฟ์ผิดพลาด: ' + err.message)
     res.status(500).json({ error: err.message })
+  }
+})
+
+// ---- One-time YouTube OAuth setup, done entirely in the browser (no terminal needed) ----
+// Visit /auth/youtube once on your deployed Render URL after setting
+// YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REDIRECT_URI env vars.
+function buildOAuthClient() {
+  const { YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REDIRECT_URI } = process.env
+  if (!YOUTUBE_CLIENT_ID || !YOUTUBE_CLIENT_SECRET || !YOUTUBE_REDIRECT_URI) {
+    throw new Error('ยังไม่ได้ตั้งค่า YOUTUBE_CLIENT_ID / YOUTUBE_CLIENT_SECRET / YOUTUBE_REDIRECT_URI ใน Render Environment Variables')
+  }
+  return new google.auth.OAuth2(YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REDIRECT_URI)
+}
+
+app.get('/auth/youtube', (req, res) => {
+  try {
+    const oauth2Client = buildOAuthClient()
+    const url = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      prompt: 'consent',
+      scope: ['https://www.googleapis.com/auth/youtube']
+    })
+    res.redirect(url)
+  } catch (err) {
+    res.status(500).send('ผิดพลาด: ' + err.message)
+  }
+})
+
+app.get('/oauth2callback', async (req, res) => {
+  try {
+    const oauth2Client = buildOAuthClient()
+    const { tokens } = await oauth2Client.getToken(req.query.code)
+    if (!tokens.refresh_token) {
+      return res.send(`
+        <h2>ไม่ได้ refresh_token กลับมา</h2>
+        <p>มักเกิดเพราะเคย Allow แอปนี้ไปแล้วรอบก่อน ให้ไปที่
+        <a href="https://myaccount.google.com/permissions" target="_blank">myaccount.google.com/permissions</a>
+        เพิกถอนสิทธิ์แอปนี้ก่อน แล้วกลับไปเปิด <a href="/auth/youtube">/auth/youtube</a> ใหม่อีกครั้ง</p>
+      `)
+    }
+    // Use it immediately for this running instance...
+    process.env.YOUTUBE_REFRESH_TOKEN = tokens.refresh_token
+    emitLog('ได้ YouTube Refresh Token แล้ว ใช้งานได้ทันทีในรอบนี้')
+    // ...and show it so it can be saved permanently in Render's Environment Variables.
+    res.send(`
+      <html><body style="font-family:sans-serif;max-width:640px;margin:40px auto;line-height:1.6">
+        <h2>✅ สำเร็จ!</h2>
+        <p>เอาค่านี้ไปใส่ใน Render → service ของคุณ → <b>Environment</b> →
+        เพิ่มตัวแปรชื่อ <code>YOUTUBE_REFRESH_TOKEN</code> แล้ววางค่านี้:</p>
+        <textarea style="width:100%;height:80px;font-family:monospace;padding:8px">${tokens.refresh_token}</textarea>
+        <p>บันทึกแล้ว Render จะ restart service ให้เอง (หรือกด Manual Deploy ถ้าไม่ auto)
+        จากนั้นกลับไปหน้า control panel กด Live ได้เลย — ไม่ต้องเปิดหน้านี้อีกแล้ว</p>
+      </body></html>
+    `)
+  } catch (err) {
+    res.status(500).send('แลก token ไม่สำเร็จ: ' + err.message)
   }
 })
 

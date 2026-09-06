@@ -63,30 +63,6 @@ $('btn-disconnect').onclick = async () => {
   }
 }
 
-$('btn-golive').onclick = async () => {
-  try {
-    await postJSON('/api/golive', {
-      obsHost: $('obsHost').value,
-      obsPort: $('obsPort').value,
-      obsPassword: $('obsPassword').value
-    })
-  } catch (e) {
-    appendLog('Go Live error: ' + e.message)
-  }
-}
-
-$('btn-stoplive').onclick = async () => {
-  try {
-    await postJSON('/api/stoplive', {
-      obsHost: $('obsHost').value,
-      obsPort: $('obsPort').value,
-      obsPassword: $('obsPassword').value
-    })
-  } catch (e) {
-    appendLog('Stop Live error: ' + e.message)
-  }
-}
-
 $('btn-yt-golive').onclick = async () => {
   try {
     const data = await postJSON('/api/youtube/golive', {

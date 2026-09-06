@@ -7,7 +7,9 @@
 - `bot/behavior.js` — ตรรกะหลัก: ฟาร์ม/คราฟดาบ-เตียงช่วงแรก → เดินทิศเหนือ → แวะเก็บของถ้าน่าสนใจ →
   วางเตียง+เซฟจุดเกิดทุก 1000 บล็อก → ถ้าตายวิ่งกลับไปเก็บของ → หยุดเมื่อถึง world border
 - `server.js` — เว็บเซิร์ฟเวอร์ (Express + Socket.io) ให้ GUI คุยกับบอท ผ่าน `public/index.html`
-- `obs/obsControl.js` — ปุ่ม "Go Live" ยิงคำสั่งไปที่ OBS WebSocket (ดูส่วนที่ 2)
+- `obs/obsControl.js` — ตั้ง stream key ให้ OBS อัตโนมัติจาก YouTube API แล้วสั่ง Start
+- `youtube/ytApi.js` — เรียก YouTube Data API v3: สร้าง broadcast, สร้าง stream, bind, transition เป็น live
+- ปุ่ม "🔴 กด Live" ในเว็บทำทุกอย่างในขั้นตอนเดียว: สร้าง broadcast → ตั้ง key ให้ OBS → Start Stream → transition เป็น live
 
 ### วิธีรันเอง
 ```bash
